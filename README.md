@@ -1,6 +1,6 @@
-# Slack++
+# Amber Points
 
-Slack. Enhanced.
+Collect Amber Points by doing stuff!
 
 ## Prerequisites
 
