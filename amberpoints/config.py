@@ -1,3 +1,4 @@
+from pydantic.networks import PostgresDsn
 from pydantic_settings import BaseSettings
 from pydantic_settings import SettingsConfigDict
 
@@ -12,6 +13,7 @@ class SlackConfig(BaseSettings):
 class Config(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_nested_delimiter="__")
     slack: SlackConfig
+    database_url: PostgresDsn
     environment: str = "development"
     port: int = 3000
 

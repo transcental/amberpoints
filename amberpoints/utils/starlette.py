@@ -2,10 +2,12 @@ from slack_bolt.adapter.starlette.async_handler import AsyncSlackRequestHandler
 from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.responses import JSONResponse
-from starlette.routing import Route
+from starlette.routing import Mount, Route
+from piccolo_admin import create_admin
 
 from amberpoints.config import config
 from amberpoints.env import env
+from amberpoints.tables import Purchase, ShopItem, Person
 
 req_handler = AsyncSlackRequestHandler(env.app)
 
@@ -28,12 +30,14 @@ async def health(req: Request):
         }
     )
 
+admin = create_admin([Person, ShopItem, Purchase], allowed_hosts=["amberpoint.transcental.dev"])
 
 app = Starlette(
     debug=True if config.environment != "production" else False,
     routes=[
         Route(path="/slack/events", endpoint=endpoint, methods=["POST"]),
         Route(path="/health", endpoint=health, methods=["GET"]),
+        Mount(path="/admin", app=admin)
     ],
     lifespan=env.enter,
 )
