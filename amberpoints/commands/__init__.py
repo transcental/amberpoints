@@ -1,7 +1,10 @@
 import logging
-import shlex
 import re
-from slack_bolt.async_app import AsyncAck, AsyncApp, AsyncRespond
+import shlex
+
+from slack_bolt.async_app import AsyncAck
+from slack_bolt.async_app import AsyncApp
+from slack_bolt.async_app import AsyncRespond
 from slack_sdk.web.async_client import AsyncWebClient
 
 from amberpoints.commands.ban import ban_handler
@@ -11,6 +14,7 @@ from amberpoints.commands.leaderboard import leaderboard_handler
 from amberpoints.commands.shop import shop_handler
 from amberpoints.commands.subtract import subtract_handler
 from amberpoints.tables import Person
+
 
 def _normalize_user_token(token: str) -> str | None:
     """Extract a Slack user id from common mention forms or accept raw ids.
@@ -26,15 +30,16 @@ def _normalize_user_token(token: str) -> str | None:
         return None
 
     # Match <@U123ABC|name> or <@U123ABC>
-    m = re.match(r'^<@([UW][A-Z0-9]+)(?:\|[^>]+)?>$', token)
+    m = re.match(r"^<@([UW][A-Z0-9]+)(?:\|[^>]+)?>$", token)
     if m:
         return m.group(1)
 
     # Plain id like U123ABC or W123ABC
-    if re.match(r'^[UW][A-Z0-9]+$', token):
+    if re.match(r"^[UW][A-Z0-9]+$", token):
         return token
 
     return None
+
 
 COMMANDS = [
     {
@@ -47,15 +52,15 @@ COMMANDS = [
                 "name": "user",
                 "type": "user",
                 "description": "The user to ban",
-                "required": True
+                "required": True,
             },
             {
                 "name": "reason",
                 "type": "string",
                 "description": "The reason for the ban",
-                "default": "No reason provided"
-            }
-        ]
+                "default": "No reason provided",
+            },
+        ],
     },
     {
         "name": "donate",
@@ -67,21 +72,21 @@ COMMANDS = [
                 "name": "sender",
                 "type": "current_user",
                 "description": "The user sending the donation",
-                "required": True
+                "required": True,
             },
             {
                 "name": "user",
                 "type": "user",
                 "description": "The user to donate points to",
-                "required": True
+                "required": True,
             },
             {
                 "name": "amount",
                 "type": "integer",
                 "description": "The amount of points to donate",
-                "default": 1
-            }
-        ]
+                "default": 1,
+            },
+        ],
     },
     {
         "name": "give",
@@ -93,15 +98,15 @@ COMMANDS = [
                 "name": "user",
                 "type": "user",
                 "description": "The user to give points to",
-                "required": True
+                "required": True,
             },
             {
                 "name": "amount",
                 "type": "integer",
                 "description": "The amount of points to give",
-                "default": 1
-            }
-        ]
+                "default": 1,
+            },
+        ],
     },
     {
         "name": "subtract",
@@ -113,45 +118,54 @@ COMMANDS = [
                 "name": "user",
                 "type": "user",
                 "description": "The user to subtract points from",
-                "required": True
+                "required": True,
             },
             {
                 "name": "amount",
                 "type": "integer",
                 "description": "The amount of points to subtract",
-                "default": 1
-            }
-        ]
+                "default": 1,
+            },
+        ],
     },
     {
         "name": "leaderboard",
         "admin": False,
         "description": "Show the Amber Points leaderboard",
         "function": leaderboard_handler,
-        "parameters": []
+        "parameters": [],
     },
     {
         "name": "shop",
         "admin": False,
         "description": "Access the Amber Points shop",
         "function": shop_handler,
-        "parameters": []
+        "parameters": [],
     },
 ]
+
 
 def register_commands(app: AsyncApp):
     help = "Available commands:\n"
     for cmd in COMMANDS:
         params = " ".join(
             [
-                f"<{param['name']}>" if param.get("required", False) else f"[{param['name']}]"
+                f"<{param['name']}>"
+                if param.get("required", False)
+                else f"[{param['name']}]"
                 for param in cmd["parameters"]
             ]
         )
-        help += f"- `/amberpoint {cmd['name']}{f" {params}" if params else ""}`: {cmd['description']}\n" if cmd.get("admin") == False else f"- `/amberpoint {cmd['name']}{f" {params}" if params else ""}`: {cmd['description']} (admin only)\n"
+        help += (
+            f"- `/amberpoint {cmd['name']}{f' {params}' if params else ''}`: {cmd['description']}\n"
+            if not cmd.get("admin")
+            else f"- `/amberpoint {cmd['name']}{f' {params}' if params else ''}`: {cmd['description']} (admin only)\n"
+        )
 
     @app.command("/amberpoint")
-    async def amberpoint_command(ack: AsyncAck, client: AsyncWebClient, respond: AsyncRespond, command: dict):
+    async def amberpoint_command(
+        ack: AsyncAck, client: AsyncWebClient, respond: AsyncRespond, command: dict
+    ):
         await ack()
         user_id = command.get("user_id")
         raw_text = command.get("text", "")
@@ -159,7 +173,9 @@ def register_commands(app: AsyncApp):
         # Check if user is banned
         person = await Person.objects().where(Person.slack_id == user_id).first()
         if person and person.banned:
-            await respond(f"You are banned from using Amber Points. Reason: {person.ban_reason}")
+            await respond(
+                f"You are banned from using Amber Points. Reason: {person.ban_reason}"
+            )
             return
 
         # Parse the incoming text with shlex so quoted arguments are preserved and escape sequences are allowed.
@@ -179,7 +195,9 @@ def register_commands(app: AsyncApp):
                     parsed = tokens[1:]
                     params = cmd.get("parameters", [])
                     args_tokens = parsed
-                    logging.debug(f"Command '{command_name}' invoked by user '{user_id}' with raw text: {raw_text}")
+                    logging.debug(
+                        f"Command '{command_name}' invoked by user '{user_id}' with raw text: {raw_text}"
+                    )
                     logging.debug(f"Parsed tokens: {tokens}")
 
                     # If the last declared parameter is a 'string', join the remainder into one argument.
@@ -187,16 +205,23 @@ def register_commands(app: AsyncApp):
                         num_non_string = max(0, len(params) - 1)
                         first_parts = args_tokens[:num_non_string]
                         remaining = args_tokens[num_non_string:]
-                        last_string = " ".join(remaining) if remaining else params[-1].get("default", "")
+                        last_string = (
+                            " ".join(remaining)
+                            if remaining
+                            else params[-1].get("default", "")
+                        )
                         # Decode escape sequences like \n, \t inside the joined string
                         try:
                             import codecs
+
                             last_string = codecs.decode(last_string, "unicode_escape")
                         except Exception:
                             # If decode fails, fall back to the raw joined string
                             pass
                         args_tokens = first_parts + [last_string]
-                        logging.debug(f"Adjusted args tokens for trailing string parameter: {args_tokens}")
+                        logging.debug(
+                            f"Adjusted args tokens for trailing string parameter: {args_tokens}"
+                        )
 
                     # Build kwargs mapping parameter names to typed/validated values
                     import inspect
@@ -205,25 +230,32 @@ def register_commands(app: AsyncApp):
 
                     kwargs_for_params = {}
                     errors = []
-                    
+
                     if "current_user" in [p.get("type") for p in params]:
-                        pname = next(p.get("name") for p in params if p.get("type") == "current_user")
+                        pname = next(
+                            p.get("name")
+                            for p in params
+                            if p.get("type") == "current_user"
+                        )
                         kwargs_for_params[pname] = user_id
-                        params.remove(next(p for p in params if p.get("type") == "current_user"))
+                        params.remove(
+                            next(p for p in params if p.get("type") == "current_user")
+                        )
 
                     for idx, param in enumerate(params):
                         pname = param.get("name")
                         ptype = param.get("type", "string")
                         default = param.get("default", None)
-                        
-                        logging.debug(f"Processing parameter '{pname}' of type '{ptype}' at position {idx}")
 
+                        logging.debug(
+                            f"Processing parameter '{pname}' of type '{ptype}' at position {idx}"
+                        )
 
                         if idx < len(args_tokens):
                             raw_val = args_tokens[idx]
                         else:
                             raw_val = default
-                            
+
                         logging.debug(f"Raw value for parameter '{pname}': {raw_val}")
 
                         # Normalize missing values
@@ -235,20 +267,28 @@ def register_commands(app: AsyncApp):
                                 try:
                                     value = int(raw_val)
                                 except Exception:
-                                    errors.append(f"Parameter '{pname}' must be an integer.")
+                                    errors.append(
+                                        f"Parameter '{pname}' must be an integer."
+                                    )
                                     continue
                             elif ptype == "user":
                                 # Normalize Slack mention formats like <@U123ABC|name> to the user id and validate.
                                 if not isinstance(raw_val, str):
-                                    errors.append(f"Parameter '{pname}' must be a user mention or ID (e.g. <@U123ABC|name>).")
+                                    errors.append(
+                                        f"Parameter '{pname}' must be a user mention or ID (e.g. <@U123ABC|name>)."
+                                    )
                                     continue
                                 norm = _normalize_user_token(raw_val)
-                                logging.debug(f"Normalized user token '{raw_val}' to '{norm}'")
+                                logging.debug(
+                                    f"Normalized user token '{raw_val}' to '{norm}'"
+                                )
                                 # After normalization, ensure we have a Slack-style user id (starts with U or W)
-                                if re.match(r'^[UW][A-Z0-9]+$', norm):
+                                if re.match(r"^[UW][A-Z0-9]+$", norm):
                                     value = norm
                                 else:
-                                    errors.append(f"Parameter '{pname}' must be a user mention or ID (e.g. <@U123ABC|name>).")
+                                    errors.append(
+                                        f"Parameter '{pname}' must be a user mention or ID (e.g. <@U123ABC|name>)."
+                                    )
                                     continue
                             else:
                                 # string or unknown types => treat as string and decode escape sequences
@@ -269,7 +309,12 @@ def register_commands(app: AsyncApp):
                     # Prepare the invocation kwargs for the handler.
                     handler = cmd["function"]
                     sig = inspect.signature(handler)
-                    handler_kwargs = {"ack": ack, "client": client, "respond": respond, "performer": user_id}
+                    handler_kwargs = {
+                        "ack": ack,
+                        "client": client,
+                        "respond": respond,
+                        "performer": user_id,
+                    }
 
                     # Backwards compatibility:
                     # If the handler accepts a parameter named 'text', pass the original raw_text.
@@ -283,6 +328,8 @@ def register_commands(app: AsyncApp):
 
                     await handler(**handler_kwargs)
                 else:
-                    await respond(f"The `{command_name}` command is not yet implemented.")
+                    await respond(
+                        f"The `{command_name}` command is not yet implemented."
+                    )
                 return
         await respond(help)

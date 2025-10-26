@@ -1,8 +1,11 @@
-from piccolo.columns import ForeignKey, Varchar
-from piccolo.columns import Integer, Timestamp
+from piccolo.columns import ForeignKey
+from piccolo.columns import Integer
+from piccolo.columns import Timestamp
+from piccolo.columns import Varchar
 from piccolo.columns.column_types import Boolean
 from piccolo.columns.defaults import TimestampNow
 from piccolo.table import Table
+
 
 class Person(Table):
     slack_id = Varchar(length=50, unique=True)

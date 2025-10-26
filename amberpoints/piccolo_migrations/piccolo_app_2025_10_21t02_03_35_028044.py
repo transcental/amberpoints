@@ -50,9 +50,7 @@ async def forwards():
         class_name="ShopItem", tablename="shop_item", schema=None, columns=None
     )
 
-    manager.add_table(
-        class_name="User", tablename="user", schema=None, columns=None
-    )
+    manager.add_table(class_name="User", tablename="user", schema=None, columns=None)
 
     manager.add_table(
         class_name="Purchase", tablename="purchase", schema=None, columns=None

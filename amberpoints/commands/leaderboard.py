@@ -1,14 +1,19 @@
-from slack_bolt.async_app import AsyncAck, AsyncRespond
+from slack_bolt.async_app import AsyncAck
+from slack_bolt.async_app import AsyncRespond
 from slack_sdk.web.async_client import AsyncWebClient
 
 from amberpoints.tables import Person
 
 
-async def leaderboard_handler(ack: AsyncAck, client: AsyncWebClient, respond: AsyncRespond, performer: str):
+async def leaderboard_handler(
+    ack: AsyncAck, client: AsyncWebClient, respond: AsyncRespond, performer: str
+):
     await ack()
 
     # Get top 10 users by points
-    top_users = await Person.objects().order_by(Person.points, ascending=False).limit(10)
+    top_users = (
+        await Person.objects().order_by(Person.points, ascending=False).limit(10)
+    )
 
     if not top_users:
         await respond("No users found.")

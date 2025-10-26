@@ -7,9 +7,9 @@ from slack_bolt.async_app import AsyncApp
 from slack_sdk.web.async_client import AsyncWebClient
 from starlette.applications import Starlette
 
+from amberpoints.commands import register_commands
 from amberpoints.config import config
 from amberpoints.utils.logging import send_heartbeat
-from amberpoints.commands import register_commands
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +41,7 @@ class Environment:
             handler = AsyncSocketModeHandler(self.app, config.slack.app_token)
             logger.debug("Starting Socket Mode handler")
             await handler.connect_async()
-            
+
         register_commands(env.app)
 
         logger.debug(f"Environment setup in {time() - st:.02}s")
