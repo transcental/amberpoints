@@ -11,7 +11,9 @@ class SlackConfig(BaseSettings):
 
 
 class Config(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_nested_delimiter="__")
+    model_config = SettingsConfigDict(
+        env_file=".env", env_nested_delimiter="__", extra="ignore"
+    )
     slack: SlackConfig
     database_url: PostgresDsn
     environment: str = "development"
