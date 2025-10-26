@@ -10,7 +10,6 @@ async def donate_handler(
     ack: AsyncAck,
     client: AsyncWebClient,
     respond: AsyncRespond,
-    performer: str,
     sender: str,
     user: str,
     amount: int = 1,
