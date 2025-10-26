@@ -13,6 +13,7 @@ async def give_handler(
     performer: str,
     user: str,
     amount: int = 1,
+    reason: str = "",
 ):
     await ack()
 
@@ -29,7 +30,13 @@ async def give_handler(
         )
         # Audit log
         await AuditLog.insert(
-            AuditLog(user_id=performer, action="give", target_user=user, amount=amount)
+            AuditLog(
+                user_id=performer,
+                action="give",
+                target_user=user,
+                amount=amount,
+                reason=reason,
+            )
         )
     else:
         # Update existing person's points
@@ -40,8 +47,15 @@ async def give_handler(
         )
         # Audit log
         await AuditLog.insert(
-            AuditLog(user_id=performer, action="give", target_user=user, amount=amount)
+            AuditLog(
+                user_id=performer,
+                action="give",
+                target_user=user,
+                amount=amount,
+                reason=reason,
+            )
         )
-    await client.chat_postMessage(
-        channel=user, text=f"You have been given {amount} points by <@{performer}>!"
-    )
+    dm_text = f"You have been given {amount} points by <@{performer}>!"
+    if reason:
+        dm_text += f" Reason: {reason}"
+    await client.chat_postMessage(channel=user, text=dm_text)

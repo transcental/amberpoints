@@ -13,6 +13,7 @@ async def subtract_handler(
     performer: str,
     user: str,
     amount: int = 1,
+    reason: str = "",
 ):
     await ack()
 
@@ -30,7 +31,11 @@ async def subtract_handler(
         # Audit log
         await AuditLog.insert(
             AuditLog(
-                user_id=performer, action="subtract", target_user=user, amount=amount
+                user_id=performer,
+                action="subtract",
+                target_user=user,
+                amount=amount,
+                reason=reason,
             )
         )
     else:
@@ -43,10 +48,16 @@ async def subtract_handler(
         # Audit log
         await AuditLog.insert(
             AuditLog(
-                user_id=performer, action="subtract", target_user=user, amount=amount
+                user_id=performer,
+                action="subtract",
+                target_user=user,
+                amount=amount,
+                reason=reason,
             )
         )
-    await client.chat_postMessage(
-        channel=user,
-        text=f"{amount} points have been subtracted from your account by <@{performer}>!",
+    dm_text = (
+        f"{amount} points have been subtracted from your account by <@{performer}>!"
     )
+    if reason:
+        dm_text += f" Reason: {reason}"
+    await client.chat_postMessage(channel=user, text=dm_text)

@@ -13,6 +13,7 @@ from amberpoints.commands.give import give_handler
 from amberpoints.commands.leaderboard import leaderboard_handler
 from amberpoints.commands.shop import shop_handler
 from amberpoints.commands.subtract import subtract_handler
+from amberpoints.config import config
 from amberpoints.tables import Person
 
 
@@ -86,6 +87,12 @@ COMMANDS = [
                 "description": "The amount of points to donate",
                 "default": 1,
             },
+            {
+                "name": "reason",
+                "type": "string",
+                "description": "The reason for the donation",
+                "default": "",
+            },
         ],
     },
     {
@@ -106,6 +113,12 @@ COMMANDS = [
                 "description": "The amount of points to give",
                 "default": 1,
             },
+            {
+                "name": "reason",
+                "type": "string",
+                "description": "The reason for giving points",
+                "default": "",
+            },
         ],
     },
     {
@@ -125,6 +138,12 @@ COMMANDS = [
                 "type": "integer",
                 "description": "The amount of points to subtract",
                 "default": 1,
+            },
+            {
+                "name": "reason",
+                "type": "string",
+                "description": "The reason for subtracting points",
+                "default": "",
             },
         ],
     },
@@ -169,7 +188,9 @@ def register_commands(app: AsyncApp):
             else f"- `/amberpoint {cmd['name']}{f' {params}' if params else ''}`: {cmd['description']} (admin only)\n"
         )
 
-    @app.command("/amberpoint")
+    @app.command(
+        "/amberpoint" if config.environment == "production" else "/dev-amberpoint"
+    )
     async def amberpoint_command(
         ack: AsyncAck, client: AsyncWebClient, respond: AsyncRespond, command: dict
     ):
@@ -249,6 +270,61 @@ def register_commands(app: AsyncApp):
                             next(p for p in params if p.get("type") == "current_user")
                         )
 
+                    # Special handling for commands with required user, optional int, optional string
+                    if (
+                        len(params) >= 3
+                        and params[0].get("required", False)
+                        and not params[1].get("required", False)
+                        and params[1].get("type") == "integer"
+                        and not params[2].get("required", False)
+                        and params[2].get("type") == "string"
+                    ):
+                        if len(parsed) > 0:
+                            user_str = parsed[0]
+                            if len(parsed) > 1:
+                                try:
+                                    int(parsed[1])
+                                    amount_str = parsed[1]
+                                    reason_str = " ".join(parsed[2:])
+                                except ValueError:
+                                    amount_str = ""
+                                    reason_str = " ".join(parsed[1:])
+                            else:
+                                amount_str = ""
+                                reason_str = ""
+                            args_tokens = [user_str, amount_str, reason_str]
+                        else:
+                            args_tokens = []
+                    # Special handling for commands with optional user, optional int
+                    elif (
+                        len(params) >= 2
+                        and not params[0].get("required", False)
+                        and params[0].get("type") == "user"
+                        and not params[1].get("required", False)
+                        and params[1].get("type") == "integer"
+                    ):
+                        if len(parsed) > 0:
+                            try:
+                                int(parsed[0])
+                                # First arg is int, assign to amount, second to user if present
+                                amount_str = parsed[0]
+                                user_str = parsed[1] if len(parsed) > 1 else ""
+                            except ValueError:
+                                # First arg not int, assign to user, second to amount if int
+                                user_str = parsed[0]
+                                if len(parsed) > 1:
+                                    try:
+                                        int(parsed[1])
+                                        amount_str = parsed[1]
+                                    except ValueError:
+                                        amount_str = ""
+                                else:
+                                    amount_str = ""
+                        else:
+                            user_str = ""
+                            amount_str = ""
+                        args_tokens = [user_str, amount_str]
+
                     for idx, param in enumerate(params):
                         pname = param.get("name")
                         ptype = param.get("type", "string")
@@ -307,6 +383,8 @@ def register_commands(app: AsyncApp):
                                 else:
                                     value = str(raw_val)
 
+                        if value is None:
+                            value = param.get("default")
                         kwargs_for_params[pname] = value
 
                     if errors:
