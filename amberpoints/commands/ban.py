@@ -2,8 +2,8 @@ from slack_bolt.async_app import AsyncAck
 from slack_bolt.async_app import AsyncRespond
 from slack_sdk.web.async_client import AsyncWebClient
 
-from amberpoints.tables import AuditLog
 from amberpoints.tables import Person
+from amberpoints.utils.ledger import create_ledger_entry
 
 
 async def ban_handler(
@@ -37,8 +37,11 @@ async def ban_handler(
             f"User {user} has been banned (new user created). Reason: {reason}"
         )
         # Audit log
-        await AuditLog.insert(
-            AuditLog(user_id=performer, action="ban", target_user=user, reason=reason)
+        await create_ledger_entry(
+            performer=performer,
+            target_user=user,
+            action="ban",
+            reason=reason,
         )
         return
 
@@ -64,6 +67,9 @@ async def ban_handler(
     await respond(f"User {user} has been banned. Reason: {reason}")
 
     # Audit log
-    await AuditLog.insert(
-        AuditLog(user_id=performer, action="ban", target_user=user, reason=reason)
+    await create_ledger_entry(
+        performer=performer,
+        target_user=user,
+        action="ban",
+        reason=reason,
     )

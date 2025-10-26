@@ -2,8 +2,8 @@ from slack_bolt.async_app import AsyncAck
 from slack_bolt.async_app import AsyncRespond
 from slack_sdk.web.async_client import AsyncWebClient
 
-from amberpoints.tables import AuditLog
 from amberpoints.tables import Person
+from amberpoints.utils.ledger import create_ledger_entry
 
 
 async def subtract_handler(
@@ -29,14 +29,12 @@ async def subtract_handler(
             f"Subtracted {amount} points from <@{user}>. They now have {-amount} points."
         )
         # Audit log
-        await AuditLog.insert(
-            AuditLog(
-                user_id=performer,
-                action="subtract",
-                target_user=user,
-                amount=amount,
-                reason=reason,
-            )
+        await create_ledger_entry(
+            performer=performer,
+            target_user=user,
+            action="subtract",
+            amount=amount,
+            reason=reason,
         )
     else:
         # Subtract from existing
@@ -46,14 +44,12 @@ async def subtract_handler(
             f"Subtracted {amount} points from <@{user}>. They now have {new_points} points."
         )
         # Audit log
-        await AuditLog.insert(
-            AuditLog(
-                user_id=performer,
-                action="subtract",
-                target_user=user,
-                amount=amount,
-                reason=reason,
-            )
+        await create_ledger_entry(
+            performer=performer,
+            target_user=user,
+            action="subtract",
+            amount=amount,
+            reason=reason,
         )
     dm_text = (
         f"{amount} points have been subtracted from your account by <@{performer}>!"

@@ -2,8 +2,8 @@ from slack_bolt.async_app import AsyncAck
 from slack_bolt.async_app import AsyncRespond
 from slack_sdk.web.async_client import AsyncWebClient
 
-from amberpoints.tables import AuditLog
 from amberpoints.tables import Person
+from amberpoints.utils.ledger import create_ledger_entry
 
 
 async def donate_handler(
@@ -54,14 +54,12 @@ async def donate_handler(
             f"Donated {amount} points to <@{user}>. You now have {new_performer_points} points. They now have {amount} points."
         )
         # Audit log
-        await AuditLog.insert(
-            AuditLog(
-                user_id=performer,
-                action="donate",
-                target_user=user,
-                amount=amount,
-                reason=reason,
-            )
+        await create_ledger_entry(
+            performer=performer,
+            target_user=user,
+            action="donate",
+            amount=amount,
+            reason=reason,
         )
     else:
         new_performer_points = performer_person.points - amount
@@ -76,14 +74,12 @@ async def donate_handler(
             f"Donated {amount} points to <@{user}>. You now have {new_performer_points} points. They now have {new_recipient_points} points."
         )
         # Audit log
-        await AuditLog.insert(
-            AuditLog(
-                user_id=performer,
-                action="donate",
-                target_user=user,
-                amount=amount,
-                reason=reason,
-            )
+        await create_ledger_entry(
+            performer=performer,
+            target_user=user,
+            action="donate",
+            amount=amount,
+            reason=reason,
         )
     dm_text = f"You have received {amount} points from <@{performer}>!"
     if reason:

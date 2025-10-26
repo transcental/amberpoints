@@ -2,8 +2,8 @@ from slack_bolt.async_app import AsyncAck
 from slack_bolt.async_app import AsyncRespond
 from slack_sdk.web.async_client import AsyncWebClient
 
-from amberpoints.tables import AuditLog
 from amberpoints.tables import Person
+from amberpoints.utils.ledger import create_ledger_entry
 
 
 async def give_handler(
@@ -29,14 +29,12 @@ async def give_handler(
             f"Gave {amount} points to <@{user}>. They now have {amount} points."
         )
         # Audit log
-        await AuditLog.insert(
-            AuditLog(
-                user_id=performer,
-                action="give",
-                target_user=user,
-                amount=amount,
-                reason=reason,
-            )
+        await create_ledger_entry(
+            performer=performer,
+            target_user=user,
+            action="give",
+            amount=amount,
+            reason=reason,
         )
     else:
         # Update existing person's points
@@ -46,14 +44,12 @@ async def give_handler(
             f"Gave {amount} points to <@{user}>. They now have {new_points} points."
         )
         # Audit log
-        await AuditLog.insert(
-            AuditLog(
-                user_id=performer,
-                action="give",
-                target_user=user,
-                amount=amount,
-                reason=reason,
-            )
+        await create_ledger_entry(
+            performer=performer,
+            target_user=user,
+            action="give",
+            amount=amount,
+            reason=reason,
         )
     dm_text = f"You have been given {amount} points by <@{performer}>!"
     if reason:
