@@ -10,10 +10,10 @@ RUN apt install -y curl
 
 RUN uv python install
 RUN uv sync --frozen
-RUN uv run piccolo migrations forwards piccolo-
 
 EXPOSE 3000
 
 ENV PATH="/app/.venv/bin:$PATH"
+RUN uv run piccolo migrations forwards piccolo_app
 
 CMD ["amberpoints"]
