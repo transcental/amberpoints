@@ -22,6 +22,9 @@ async def donate_handler(
     if not user:
         await respond("You must specify a user to donate to.")
         return
+    if amount <= 0:
+        await respond("You must donate a positive amount of points.")
+        return
 
     # Get performer
     performer_person = (
