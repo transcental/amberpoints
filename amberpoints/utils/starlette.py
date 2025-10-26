@@ -3,11 +3,11 @@ from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.routing import Mount, Route
-from piccolo_admin import create_admin
+from piccolo_admin.endpoints import create_admin
 
 from amberpoints.config import config
 from amberpoints.env import env
-from amberpoints.tables import Purchase, ShopItem, Person
+from amberpoints.tables import Purchase, ShopItem, Person, AuditLog
 
 req_handler = AsyncSlackRequestHandler(env.app)
 
@@ -30,7 +30,7 @@ async def health(req: Request):
         }
     )
 
-admin = create_admin([Person, ShopItem, Purchase], allowed_hosts=["amberpoint.transcental.dev"])
+admin = create_admin([Person, ShopItem, Purchase, AuditLog], allowed_hosts=["amberpoint.transcental.dev"])
 
 app = Starlette(
     debug=True if config.environment != "production" else False,
