@@ -1,7 +1,10 @@
+from slack_sdk.web.async_client import AsyncWebClient
+
 from amberpoints.config import config
-from amberpoints.env import env
 from amberpoints.tables import AuditLog
 from amberpoints.utils.logging import send_heartbeat
+
+slack_client = AsyncWebClient(token=config.slack.bot_token)
 
 
 async def create_ledger_entry(
@@ -27,7 +30,7 @@ async def create_ledger_entry(
         if reason:
             message += f"\n*Reason:* {reason}"
         try:
-            await env.app.chat_postMessage(
+            await slack_client.chat_postMessage(
                 channel=config.slack.ledger_channel,
                 text=message,
             )
