@@ -24,6 +24,6 @@ async def leaderboard_handler(
         status = f" (banned - {person.ban_reason})" if person.banned else ""
         status += " (admin)" if person.admin else ""
         status += " (you)" if person.slack_id == performer else ""
-        leaderboard += f"{i}. *<@{person.slack_id}>*: {person.points} points{status}\n"
+        leaderboard += f"{i}. *<@{person.slack_id}>*: {person.points} point{'s' if person.points != 1 else ''}{status}\n"
 
     await respond(leaderboard)

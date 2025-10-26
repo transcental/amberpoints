@@ -148,14 +148,21 @@ COMMANDS = [
 def register_commands(app: AsyncApp):
     help = "Available commands:\n"
     for cmd in COMMANDS:
+        parameters = cmd.get("parameters", [])
+        if "current_user" in [p.get("type") for p in parameters]:
+            # Exclude current_user from help display
+            cmd["parameters"] = [
+                p for p in parameters if p.get("type") != "current_user"
+            ]
         params = " ".join(
             [
                 f"<{param['name']}>"
                 if param.get("required", False)
                 else f"[{param['name']}]"
-                for param in cmd["parameters"]
+                for param in parameters
             ]
         )
+
         help += (
             f"- `/amberpoint {cmd['name']}{f' {params}' if params else ''}`: {cmd['description']}\n"
             if not cmd.get("admin")
